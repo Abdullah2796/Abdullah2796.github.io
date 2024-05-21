@@ -1,0 +1,71 @@
+Select *
+From SmokingCrises.dbo.[death-rate-smoking]
+
+--Retrieve Total Smoking Mortality for Each Country:
+SELECT [Entity], SUM([Smoking mortality]) AS TotalMortality
+FROM SmokingCrises.dbo.[death-rate-smoking]
+GROUP BY [Entity]
+
+
+--Find the Year with the Highest Smoking Mortality for Each Country:
+SELECT [Entity], Year, [Smoking mortality]
+FROM (
+    SELECT [Entity], Year, [Smoking mortality],
+           ROW_NUMBER() OVER (PARTITION BY [Entity] ORDER BY [Smoking mortality] DESC) AS RowNum
+    FROM SmokingCrises.dbo.[death-rate-smoking]
+) AS Ranked
+WHERE RowNum = 1
+
+
+--Calculate Average Smoking Mortality Rate by Country:
+Select [Entity] ,AVG([Smoking mortality])
+From SmokingCrises.dbo.[death-rate-smoking]
+Group by [Entity]
+order by 1,2
+
+
+--Identify Countries with Increasing Smoking Mortality Trends:
+SELECT [Entity], MIN(Year) AS StartYear, MAX(Year) AS EndYear
+FROM (
+    SELECT [Entity], Year,
+           LAG([Smoking mortality], 1, [Smoking mortality]) OVER (PARTITION BY [Entity] ORDER BY Year) AS PrevMortality,
+           [Smoking mortality]
+    FROM SmokingCrises.dbo.[death-rate-smoking]
+) AS Trends
+WHERE [Smoking mortality] > PrevMortality
+GROUP BY [Entity]
+
+
+
+--Calculate Yearly Change in Smoking Mortality:
+SELECT [Entity], Year, [Smoking mortality],
+       [Smoking mortality] - LAG([Smoking mortality], 1, [Smoking mortality]) OVER (PARTITION BY [Entity] ORDER BY Year)  AS MortalityChange
+FROM SmokingCrises.dbo.[death-rate-smoking]
+
+
+--Find Countries with the Highest Smoking Mortality Rates:
+SELECT TOP 10 [Entity], MAX([Smoking mortality]) AS MaxMortalityRate
+FROM SmokingCrises.dbo.[death-rate-smoking]
+GROUP BY [Entity]
+ORDER BY MaxMortalityRate DESC
+
+
+--Identify Years with the Highest Smoking Mortality Rate Overall:
+SELECT Year, MAX([Smoking mortality]) AS MaxMortalityRate
+FROM SmokingCrises.dbo.[death-rate-smoking]
+GROUP BY Year
+ORDER BY MaxMortalityRate DESC
+
+
+--Calculate Total Smoking Deaths by Country and Year:
+SELECT [Entity], Year, SUM([Smoking mortality]) AS TotalDeaths
+FROM SmokingCrises.dbo.[death-rate-smoking]
+GROUP BY [Entity], Year
+
+
+
+--Find the Year with the Lowest Average Smoking Mortality Rate:
+SELECT Year, AVG([Smoking mortality]) AS AvgMortalityRate
+FROM SmokingCrises.dbo.[death-rate-smoking]
+GROUP BY Year
+ORDER BY AvgMortalityRate
